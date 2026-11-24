@@ -1,0 +1,55 @@
+BD Aula dia 11/12
+
+1)
+DROP TRIGGER IF EXISTS updatePartStock;
+CREATE TRIGGER updatePartStock
+AFTER INSERT ON RepairPart
+FOR EACH ROW
+BEGIN
+   UPDATE PART
+      SET availableQuantity = availableQuantity - NEW.Quantity
+      WHERE Part.PartId = NEW.PartId;
+END;
+
+2)
+CREATE TRIGGER defaultClient
+AFTER INSERT ON Repair
+FOR EACH ROW
+WHEN (NEW.clientId is NULL)
+BEGIN
+   UPDATE Repair
+      SET clientId = (SELECT clientId FROM car WHERE idCar = NEW.idCar)
+      WHERE repairId = NEW.repairId;
+END;
+
+3)
+CREATE TRIGGER validatePartRepair
+BEFORE INSERT ON RepairPart
+FOR EACH ROW 
+WHEN NOT EXISTS(
+   SELECT * FROM Repair
+      JOIN Car USING (idCar)
+      JOIN PartModel USING (modelId)
+      JOIN Part USING (PartId)
+   WHERE repairId = NEW.repairId
+   AND partId = NEW.partId
+   AND AvailableQuantity >= NEW.Quantity)
+BEGIN
+   SELECT RAISE (ABORT, "Invalid part or quantity");
+END;
+
+4)
+CREATE VIEW ModelBrands
+   AS SELECT Model.NAME AS ModelName,
+      Brand.NAME AS BrandName
+   FROM Model, Brand WHERE Model.BrandId = Brand.BrandId;
+
+CREATE TRIGGER insertModelBrand
+INSTEAD OF INSERT ON ModelBrands
+FOR EACH ROW
+BEGIN
+   --the ignore is used if there is already that brand name or the model in a tupple
+   INSERT OR IGNORE INTO Brand (name) VALUES (NEW.BrandName); 
+   INSERT OR IGNORE INTO Model (name, BrandId) 
+   SELECT NEW.modelName, brandId FROM Brand WHERE name = NEW.brandName;
+END;

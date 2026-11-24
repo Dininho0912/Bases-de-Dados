@@ -1,0 +1,13 @@
+# Compiled SQLite databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Installers & archives
+*.deb
+*.zip
+*.tar.gz
+
+# OS & editor files
+.vscode/
+.DS_Store
